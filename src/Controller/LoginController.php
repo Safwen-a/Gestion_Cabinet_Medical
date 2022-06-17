@@ -8,8 +8,11 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class LoginController extends AbstractController
 {
-    #[Route('/login', name: 'app_login')]
+    #[Route('/login', name: 'login')]
     public function index(AuthenticationUtils $authenticationUtils): Response{
+        if ($this->getUser()) {
+            return $this->redirectToRoute('app_patient_index');
+        }
         // get the login error if there is one
         $error = $authenticationUtils->getLastAuthenticationError();
         // last username entered by the user
