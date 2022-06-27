@@ -4,6 +4,7 @@ namespace App\Form;
 
 use App\Entity\Assistant;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -16,7 +17,9 @@ class AssistantType extends AbstractType
             ->add('lname')
             ->add('numTel')
             ->add('email')
-            ->add('dateNaissance')
+            ->add('dateNaissance', DateType::class, [
+                'widget' => 'single_text',
+            ])
             ->add('adress')
             ->add('privilege')
         ;

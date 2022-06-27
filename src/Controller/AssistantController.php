@@ -5,6 +5,9 @@ namespace App\Controller;
 use App\Entity\Assistant;
 use App\Form\AssistantType;
 use App\Repository\AssistantRepository;
+use App\Entity\User;
+use App\Form\UserType;
+use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,13 +25,20 @@ class AssistantController extends AbstractController
     }
 
     #[Route('/new', name: 'app_assistant_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, AssistantRepository $assistantRepository): Response
+    public function new(Request $request, AssistantRepository $assistantRepository, UserRepository $userRepository): Response
     {
         $assistant = new Assistant();
         $form = $this->createForm(AssistantType::class, $assistant);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $user = new User();
+            $user->setUsername($assistant->getFname() . $assistant->getLname());
+            $user->setEmail($assistant->getEmail());
+            $user->setPassword(password_hash($assistant->getFname() . "123.", PASSWORD_DEFAULT));
+            $user->setRoles(["ROLE_ASSISTANT"]);
+            $userRepository->add($user, true);
+
             $assistantRepository->add($assistant, true);
 
             return $this->redirectToRoute('app_assistant_index', [], Response::HTTP_SEE_OTHER);
@@ -49,12 +59,16 @@ class AssistantController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_assistant_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Assistant $assistant, AssistantRepository $assistantRepository): Response
+    public function edit(Request $request, Assistant $assistant, AssistantRepository $assistantRepository, UserRepository $userRepository): Response
     {
         $form = $this->createForm(AssistantType::class, $assistant);
+        $email = $assistant->getEmail();
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $user = $userRepository->findOneBy(array('email' => $email));
+            $user->setEmail($assistant->getEmail());
+            $userRepository->add($user, true);
             $assistantRepository->add($assistant, true);
 
             return $this->redirectToRoute('app_assistant_index', [], Response::HTTP_SEE_OTHER);
@@ -67,9 +81,11 @@ class AssistantController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_assistant_delete', methods: ['POST'])]
-    public function delete(Request $request, Assistant $assistant, AssistantRepository $assistantRepository): Response
+    public function delete(Request $request, Assistant $assistant, AssistantRepository $assistantRepository, UserRepository $userRepository): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$assistant->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $assistant->getId(), $request->request->get('_token'))) {
+            $user = $userRepository->findOneByEmail($assistant->getEmail());
+            $userRepository->remove($user, true);
             $assistantRepository->remove($assistant, true);
         }
 

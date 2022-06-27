@@ -3,8 +3,11 @@
 namespace App\Controller;
 
 use App\Entity\Patient;
-use App\Form\Patient1Type;
+use App\Form\PatientType;
 use App\Repository\PatientRepository;
+use App\Entity\User;
+use App\Form\UserType;
+use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,16 +24,24 @@ class PatientController extends AbstractController
         ]);
     }
 
+
     #[Route('/new', name: 'app_patient_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, PatientRepository $patientRepository): Response
+    public function new(Request $request, PatientRepository $patientRepository, UserRepository $userRepository): Response
     {
         $patient = new Patient();
-        $form = $this->createForm(Patient1Type::class, $patient);
+        
+        $form = $this->createForm(PatientType::class, $patient);
         $form->handleRequest($request);
-
+        
         if ($form->isSubmitted() && $form->isValid()) {
-            $patientRepository->add($patient, true);
+            $user = new User();
+            $user->setUsername($patient->getFname().$patient->getLname());
+            $user->setEmail($patient->getEmail());
+            $user->setPassword(password_hash($patient->getFname()."123.",PASSWORD_DEFAULT));
+            $user->setRoles(["ROLE_PATIENT"]);
 
+            $userRepository->add($user, true);
+            $patientRepository->add($patient, true);
             return $this->redirectToRoute('app_patient_index', [], Response::HTTP_SEE_OTHER);
         }
 
@@ -49,14 +60,17 @@ class PatientController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_patient_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Patient $patient, PatientRepository $patientRepository): Response
+    public function edit(Request $request, Patient $patient, PatientRepository $patientRepository,UserRepository $userRepository): Response
     {
-        $form = $this->createForm(Patient1Type::class, $patient);
+        $form = $this->createForm(PatientType::class, $patient);
+        $email=$patient->getEmail();
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $user=$userRepository->findOneBy(array('email' => $email));
+            $user->setEmail($patient->getEmail());
+            $userRepository->add($user, true);
             $patientRepository->add($patient, true);
-
             return $this->redirectToRoute('app_patient_index', [], Response::HTTP_SEE_OTHER);
         }
 
@@ -67,9 +81,11 @@ class PatientController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_patient_delete', methods: ['POST'])]
-    public function delete(Request $request, Patient $patient, PatientRepository $patientRepository): Response
+    public function delete(Request $request, Patient $patient, PatientRepository $patientRepository,UserRepository $userRepository): Response
     {
         if ($this->isCsrfTokenValid('delete'.$patient->getId(), $request->request->get('_token'))) {
+            $user=$userRepository->findOneByEmail($patient->getEmail());
+            $userRepository->remove($user,true);
             $patientRepository->remove($patient, true);
         }
 

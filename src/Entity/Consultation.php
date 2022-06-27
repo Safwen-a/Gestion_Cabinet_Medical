@@ -19,6 +19,11 @@ class Consultation
     #[ORM\Column(type: 'date')]
     private $DateCons;
 
+    #[ORM\ManyToOne(targetEntity: Patient::class, inversedBy: 'consultations')]
+    #[ORM\JoinColumn(nullable: false)]
+    private $patient;
+
+
     public function getId(): ?int
     {
         return $this->id;
@@ -47,4 +52,17 @@ class Consultation
 
         return $this;
     }
+
+    public function getPatient(): ?Patient
+    {
+        return $this->patient;
+    }
+
+    public function setPatient(?Patient $patient): self
+    {
+        $this->patient = $patient;
+
+        return $this;
+    }
+
 }

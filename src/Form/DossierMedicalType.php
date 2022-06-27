@@ -2,29 +2,30 @@
 
 namespace App\Form;
 
-use App\Entity\Patient;
+use App\Entity\DossierMedical;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Form\Extension\Core\Type\DateType;
 
-class Patient1Type extends AbstractType
+
+class DossierMedicalType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('fname')
-            ->add('lname')
-            ->add('numTel')
-            ->add('email')
-            ->add('dateNaissance')
-            ->add('adress')
-        ;
+            ->add('patient')
+            ->add('maladieChronique')
+            ->add('allergie')
+            ->add('dateCreation', DateType::class, [
+                'widget' => 'single_text',
+            ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => Patient::class,
+            'data_class' => DossierMedical::class,
         ]);
     }
 }
